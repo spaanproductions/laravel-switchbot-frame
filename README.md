@@ -2,6 +2,9 @@
 
 ![Laravel SwitchBot AI Art Frame](art/banner.png)
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/spaanproductions/laravel-switchbot-frame.svg)](https://packagist.org/packages/spaanproductions/laravel-switchbot-frame)
+[![Tests](https://github.com/spaanproductions/laravel-switchbot-frame/actions/workflows/run-tests.yml/badge.svg)](https://github.com/spaanproductions/laravel-switchbot-frame/actions/workflows/run-tests.yml)
+
 A standalone Laravel + Livewire admin page for the [SwitchBot AI Art Frame](https://eu.switch-bot.com/products/switchbot-ai-art-frame).
 Upload photos, optimize them for the E Ink Spectra 6 panel, push them to the frame, and read the real
 battery level from SwitchBot's change-report webhook — all from one self-contained page that ships its
