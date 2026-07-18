@@ -2,6 +2,7 @@
 
 namespace SpaanProductions\LaravelSwitchbotFrame\Tests;
 
+use Laravel\Ai\AiServiceProvider;
 use Illuminate\Support\Facades\Http;
 use Livewire\LivewireServiceProvider;
 use Illuminate\Support\Facades\Storage;
@@ -31,6 +32,7 @@ class TestCase extends Orchestra
 			LivewireServiceProvider::class,
 			BladeIconsServiceProvider::class,
 			BladeHeroiconsServiceProvider::class,
+			AiServiceProvider::class,
 			LaravelSwitchbotFrameServiceProvider::class,
 		];
 	}
@@ -45,6 +47,12 @@ class TestCase extends Orchestra
 	protected function defineEnvironment($app): void
 	{
 		$app['config']->set('app.key', 'base64:2fl+Ktvkfl+Fuz4Qp/A75G2RTiWVA/ZoKZvp6fiiM10=');
+
+		// Pin a deterministic image provider so laravel/ai can construct it during
+		// tests without a real API key. mergeConfigFrom won't overwrite these, and
+		// Image::fake() intercepts the actual generation before any HTTP call.
+		$app['config']->set('ai.default_for_images', 'openai');
+		$app['config']->set('ai.providers.openai.key', 'test-key');
 
 		$app['config']->set('database.default', 'testing');
 		$app['config']->set('database.connections.testing', [

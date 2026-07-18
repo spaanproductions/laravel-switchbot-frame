@@ -28,6 +28,53 @@ class OptimizeImageForEinkTest extends TestCase
 		return $path;
 	}
 
+	private function makeGrayJpeg(int $width, int $height, int $level): string
+	{
+		$image = imagecreatetruecolor($width, $height);
+		imagefilledrectangle($image, 0, 0, $width, $height, imagecolorallocate($image, $level, $level, $level));
+
+		$path = tempnam(sys_get_temp_dir(), 'eink-test') . '.jpg';
+		imagejpeg($image, $path);
+
+		return $path;
+	}
+
+	public function test_the_brightness_boost_is_configurable(): void
+	{
+		$source = $this->makeGrayJpeg(801, 500, 128);
+		$target = tempnam(sys_get_temp_dir(), 'eink-test') . '.jpg';
+
+		// Only brightness applies to a flat gray image (saturation/contrast are no-ops).
+		(new OptimizeImageForEink(saturation: 1.0, contrast: 0, brightness: 60, sharpen: false))
+			->handle($source, $target);
+
+		$out = imagecreatefromjpeg($target);
+		$red = (imagecolorat($out, 800, 250) >> 16) & 0xFF;
+
+		// 128 + 60 ≈ 188, allowing for JPEG rounding.
+		$this->assertGreaterThan(170, $red);
+		$this->assertLessThan(205, $red);
+	}
+
+	public function test_zero_saturation_produces_a_grayscale_image(): void
+	{
+		$source = $this->makeJpeg(801, 500); // filled with a saturated purple
+		$target = tempnam(sys_get_temp_dir(), 'eink-test') . '.jpg';
+
+		(new OptimizeImageForEink(saturation: 0.0, contrast: 0, brightness: 0, sharpen: false))
+			->handle($source, $target);
+
+		$out = imagecreatefromjpeg($target);
+		$rgb = imagecolorat($out, 800, 250);
+		$red = ($rgb >> 16) & 0xFF;
+		$green = ($rgb >> 8) & 0xFF;
+		$blue = $rgb & 0xFF;
+
+		// Every channel collapses to the pixel's luma (allowing for JPEG rounding).
+		$this->assertLessThanOrEqual(3, abs($red - $green));
+		$this->assertLessThanOrEqual(3, abs($green - $blue));
+	}
+
 	public function test_it_resizes_landscape_images_to_1600x1200(): void
 	{
 		$source = $this->makeJpeg(801, 500);

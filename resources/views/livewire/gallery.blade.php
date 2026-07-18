@@ -37,7 +37,16 @@
 
 			{{-- Upload --}}
 			<section class="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-				<h2 class="font-display text-xl font-semibold text-stone-900">Add to library</h2>
+				<div class="flex items-start justify-between gap-3">
+					<h2 class="font-display text-xl font-semibold text-stone-900">Add to library</h2>
+					@if (\SpaanProductions\LaravelSwitchbotFrame\Support\ImageStudio::enabled())
+						<a href="{{ route('switchbot.studio') }}"
+							class="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--sb-accent)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--sb-accent-hover)]">
+							<x-heroicon-o-sparkles class="h-4 w-4" />
+							Create with AI
+						</a>
+					@endif
+				</div>
 				<p class="mt-1 text-sm text-stone-500">JPEG, PNG, WebP &mdash; tuned for the e-ink panel.</p>
 
 				<form wire:submit="save" class="mt-5 space-y-5">
@@ -143,6 +152,12 @@
 										<span wire:loading.remove wire:target="pushToFrame({{ $image->id }})">Hang it</span>
 										<span wire:loading wire:target="pushToFrame({{ $image->id }})">Sending&hellip;</span>
 									</button>
+									@if (\SpaanProductions\LaravelSwitchbotFrame\Support\ImageStudio::enabled() && $image->isReady())
+										<a href="{{ route('switchbot.studio', ['from' => $image->id]) }}" title="Edit with AI"
+											class="rounded-lg px-2 py-1.5 text-xs text-stone-400 transition hover:bg-[var(--sb-accent)]/10 hover:text-[var(--sb-accent)]">
+											<x-heroicon-o-sparkles class="h-4 w-4" />
+										</a>
+									@endif
 									<button type="button" wire:click="deleteImage({{ $image->id }})" wire:confirm="Remove this image from your library?" title="Delete"
 										class="rounded-lg px-2 py-1.5 text-xs text-stone-400 transition hover:bg-red-50 hover:text-red-600">
 										<x-heroicon-o-trash class="h-4 w-4" />

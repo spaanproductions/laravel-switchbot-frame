@@ -7,10 +7,14 @@ use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use SpaanProductions\LaravelSwitchbotFrame\Livewire\Gallery;
+use SpaanProductions\LaravelSwitchbotFrame\Livewire\AiStudio;
 use SpaanProductions\LaravelSwitchbotFrame\Livewire\NowShowing;
+use SpaanProductions\LaravelSwitchbotFrame\Support\ImageStudio;
 use SpaanProductions\LaravelSwitchbotFrame\Livewire\WebhookManager;
+use SpaanProductions\LaravelSwitchbotFrame\Actions\OptimizeImageForEink;
 use SpaanProductions\LaravelSwitchbotFrame\Console\Commands\ManageWebhook;
 use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\ImageController;
+use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\AiImageController;
 use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\WebhookController;
 use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\StylesheetController;
 
@@ -25,6 +29,16 @@ class LaravelSwitchbotFrameServiceProvider extends PackageServiceProvider
 			->hasCommand(ManageWebhook::class);
 	}
 
+	public function packageRegistered(): void
+	{
+		// Resolve the e-ink optimizer with the configured boosts (kept out of the
+		// action itself so it stays a pure, unit-testable class).
+		$this->app->bind(
+			OptimizeImageForEink::class,
+			fn (): OptimizeImageForEink => OptimizeImageForEink::fromConfig(),
+		);
+	}
+
 	public function packageBooted(): void
 	{
 		$this->registerLivewireComponents();
@@ -37,6 +51,10 @@ class LaravelSwitchbotFrameServiceProvider extends PackageServiceProvider
 		Livewire::component('switchbot.gallery', Gallery::class);
 		Livewire::component('switchbot.now-showing', NowShowing::class);
 		Livewire::component('switchbot.webhook-manager', WebhookManager::class);
+
+		if (ImageStudio::enabled()) {
+			Livewire::component('switchbot.ai-studio', AiStudio::class);
+		}
 	}
 
 	private function registerRoutes(): void
@@ -49,6 +67,11 @@ class LaravelSwitchbotFrameServiceProvider extends PackageServiceProvider
 				Route::livewire('/', Gallery::class)->name('switchbot.index');
 				Route::get('/images/{frameImage}', ImageController::class)->name('switchbot.images.show');
 				Route::get('/assets/app.css', StylesheetController::class)->name('switchbot.assets.css');
+
+				if (ImageStudio::enabled()) {
+					Route::livewire('/studio', AiStudio::class)->name('switchbot.studio');
+					Route::get('/studio/messages/{aiMessage}/image', AiImageController::class)->name('switchbot.studio.image');
+				}
 			});
 
 		$webhook = (array) ($routes['webhook'] ?? []);

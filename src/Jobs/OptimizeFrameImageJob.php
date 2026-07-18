@@ -31,16 +31,21 @@ class OptimizeFrameImageJob implements ShouldQueue
 
 	public int $tries = 1;
 
+	/** @param array<string, mixed>|null $optimizer Preset boosts; null uses the configured defaults. */
 	public function __construct(
 		public FrameImage $image,
 		public string $incomingPath,
 		public bool $enhance = true,
+		public ?array $optimizer = null,
 	) {
 	}
 
 	public function handle(): void
 	{
-		$optimizer = resolve(OptimizeImageForEink::class);
+		$optimizer = $this->optimizer !== null
+			? OptimizeImageForEink::fromArray($this->optimizer)
+			: resolve(OptimizeImageForEink::class);
+
 		$disk = Storage::disk(config('switchbot.disk'));
 
 		$source = tempnam(sys_get_temp_dir(), 'frame-src');

@@ -83,4 +83,101 @@ return [
 		'now_showing' => env('SWITCHBOT_NOW_SHOWING_ASPECT', 'portrait'),
 		'dropzone' => env('SWITCHBOT_DROPZONE_ASPECT', 'portrait'),
 	],
+
+	/*
+	 * AI Image Studio — a chat-style flow to generate and iteratively edit frame
+	 * images from prompts. It requires the optional "laravel/ai" package
+	 * (composer require laravel/ai) and only appears when that package is installed
+	 * *and* `enabled` is true, so you can leave it off even when the package is
+	 * present. Auth tokens come from laravel/ai's own env vars (OPENAI_API_KEY,
+	 * GEMINI_API_KEY, …). Generated previews live on the same `disk` above, under
+	 * `switchbot/ai-conversations/`.
+	 */
+	'ai' => [
+		'enabled' => env('SWITCHBOT_AI_ENABLED', true),
+
+		// Image generation. Provider/model are optional overrides — leave empty to use
+		// config/ai.php's defaults (laravel/ai ships with "gemini" as its default image
+		// provider, so either set GEMINI_API_KEY or pin SWITCHBOT_AI_IMAGE_PROVIDER=openai).
+		// `default_aspect` is the shape for new conversations; empty follows the
+		// `aspect.now_showing` orientation below.
+		'images' => [
+			'provider' => env('SWITCHBOT_AI_IMAGE_PROVIDER'),
+			'model' => env('SWITCHBOT_AI_IMAGE_MODEL'),
+			'default_aspect' => env('SWITCHBOT_AI_IMAGE_ASPECT'),
+		],
+
+		// "Improve prompt" is a *text* task, so it uses laravel/ai's default text
+		// provider (config/ai.php `default`) unless you override it here.
+		'improve' => [
+			'provider' => env('SWITCHBOT_AI_IMPROVE_PROVIDER'),
+			'model' => env('SWITCHBOT_AI_IMPROVE_MODEL'),
+		],
+
+		/*
+		 * EXPERIMENTAL cost estimation. When enabled, a queued job estimates the
+		 * USD cost of each generation and prompt improvement using token counts and
+		 * public per-token prices from LiteLLM's model_prices_and_context_window.json
+		 * (fetched and cached; re-fetched every `refresh_interval` hours). This is a
+		 * rough INDICATION only — prices, image-token accounting and provider billing
+		 * vary, so it MUST NOT be relied on for correctness, invoicing or budgeting.
+		 */
+		'cost_estimation' => [
+			'enabled' => env('SWITCHBOT_AI_COST_ESTIMATION', false),
+			'refresh_interval' => env('SWITCHBOT_AI_COST_REFRESH_HOURS', 24),
+			'prices_url' => env('SWITCHBOT_AI_PRICES_URL', 'https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json'),
+		],
+	],
+
+	/*
+	 * E-ink optimizer. The Spectra 6 panel is muted, so uploads and images saved
+	 * from the AI Studio are prepared with one of the presets below. `default` is
+	 * the preset used for regular gallery uploads (the Studio lets you pick one per
+	 * image). Any keys a preset omits fall back to sensible built-in values.
+	 */
+	'optimizer' => [
+		'default' => env('SWITCHBOT_OPTIMIZER_PRESET', 'vivid'),
+
+		/*
+		 * Presets shown in the AI Studio's "Save to library" dialog, so the
+		 * optimization can be matched to the image (vivid photos vs. light line art).
+		 * Add your own and they appear automatically. The key is the identifier;
+		 * `label` and `description` are shown to the user; the remaining keys are the
+		 * boosts (`contrast` uses GD's IMG_FILTER_CONTRAST scale — negative = punchier).
+		 */
+		'presets' => [
+			'vivid' => [
+				'label' => 'Vivid',
+				'description' => 'Boldest colours — best for photos that render dull on the panel.',
+				'saturation' => 1.6,
+				'contrast' => -18,
+				'brightness' => 12,
+				'sharpen' => true,
+			],
+			'balanced' => [
+				'label' => 'Balanced',
+				'description' => 'A moderate boost that keeps tones close to the original.',
+				'saturation' => 1.35,
+				'contrast' => 0,
+				'brightness' => 0,
+				'sharpen' => true,
+			],
+			'soft' => [
+				'label' => 'Soft',
+				'description' => 'Gentle and slightly darker — best for light artwork and line drawings.',
+				'saturation' => 1.2,
+				'contrast' => 8,
+				'brightness' => -8,
+				'sharpen' => false,
+			],
+			'grayscale' => [
+				'label' => 'Grayscale',
+				'description' => 'Timeless black & white — desaturates fully, with a touch of contrast.',
+				'saturation' => 0,
+				'contrast' => -8,
+				'brightness' => 0,
+				'sharpen' => true,
+			],
+		],
+	],
 ];

@@ -20,13 +20,51 @@ class OptimizeImageForEink
 
 	public const int PANEL_SHORT_EDGE = 1200;
 
-	private const float SATURATION_BOOST = 1.6;
+	public const float SATURATION_BOOST = 1.6;
 
-	private const int CONTRAST_BOOST = -18;
+	public const int CONTRAST_BOOST = -18;
 
-	private const int BRIGHTNESS_BOOST = 12;
+	public const int BRIGHTNESS_BOOST = 12;
 
-	private const int JPEG_QUALITY = 92;
+	public const int JPEG_QUALITY = 92;
+
+	public function __construct(
+		private float $saturation = self::SATURATION_BOOST,
+		private int $contrast = self::CONTRAST_BOOST,
+		private int $brightness = self::BRIGHTNESS_BOOST,
+		private bool $sharpen = true,
+		private int $jpegQuality = self::JPEG_QUALITY,
+	) {
+	}
+
+	/** Build an instance from the package's configured default optimizer preset. */
+	public static function fromConfig(): self
+	{
+		$presets = config('switchbot.optimizer.presets');
+		$default = (string) config('switchbot.optimizer.default', 'vivid');
+
+		$preset = is_array($presets) && isset($presets[$default]) && is_array($presets[$default])
+			? $presets[$default]
+			: [];
+
+		return static::fromArray($preset);
+	}
+
+	/**
+	 * Build an instance from a preset array (e.g. a `switchbot.optimizer.presets` entry).
+	 *
+	 * @param array<string, mixed> $settings
+	 */
+	public static function fromArray(array $settings): self
+	{
+		return new self(
+			(float) ($settings['saturation'] ?? self::SATURATION_BOOST),
+			(int) ($settings['contrast'] ?? self::CONTRAST_BOOST),
+			(int) ($settings['brightness'] ?? self::BRIGHTNESS_BOOST),
+			(bool) ($settings['sharpen'] ?? true),
+			(int) ($settings['jpeg_quality'] ?? self::JPEG_QUALITY),
+		);
+	}
 
 	/**
 	 * Process the image at $sourcePath and write a JPEG to $targetPath.
@@ -50,13 +88,16 @@ class OptimizeImageForEink
 		unset($source);
 
 		if ($enhance) {
-			$this->boostSaturation($canvas, self::SATURATION_BOOST);
-			imagefilter($canvas, IMG_FILTER_CONTRAST, self::CONTRAST_BOOST);
-			imagefilter($canvas, IMG_FILTER_BRIGHTNESS, self::BRIGHTNESS_BOOST);
-			$this->sharpen($canvas);
+			$this->boostSaturation($canvas, $this->saturation);
+			imagefilter($canvas, IMG_FILTER_CONTRAST, $this->contrast);
+			imagefilter($canvas, IMG_FILTER_BRIGHTNESS, $this->brightness);
+
+			if ($this->sharpen) {
+				$this->applySharpen($canvas);
+			}
 		}
 
-		if ( ! @imagejpeg($canvas, $targetPath, self::JPEG_QUALITY)) {
+		if ( ! @imagejpeg($canvas, $targetPath, $this->jpegQuality)) {
 			unset($canvas);
 
 			throw new RuntimeException(sprintf('Could not write optimized image to [%s].', $targetPath));
@@ -229,7 +270,7 @@ class OptimizeImageForEink
 	}
 
 	/** Mild convolution to recover detail lost to dithering. */
-	private function sharpen(GdImage $image): void
+	private function applySharpen(GdImage $image): void
 	{
 		imageconvolution($image, [
 			[-1.0, -1.0, -1.0],
