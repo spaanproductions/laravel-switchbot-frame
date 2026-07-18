@@ -1,0 +1,48 @@
+version: 2
+
+updates:
+  # PHP (Composer) — weekly version updates. Major bumps are split into
+  # their own grouped PR, separate from grouped minor/patch bumps.
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      composer-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
+      composer-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # GitHub Actions — same major / minor-patch split.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # npm — no version-update PRs (limit 0). Vulnerabilities are still
+  # surfaced via Dependabot alerts (enabled in repo settings); security
+  # update PRs follow only if "Dependabot security updates" is turned on.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
