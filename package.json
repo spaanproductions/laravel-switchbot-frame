@@ -1,0 +1,13 @@
+{
+    "private": true,
+    "name": "laravel-switchbot-frame",
+    "description": "Standalone CSS build for the SwitchBot AI Art Frame admin page.",
+    "scripts": {
+        "build": "tailwindcss -i ./resources/css/switchbot-frame.css -o ./dist/switchbot-frame.css --minify",
+        "dev": "tailwindcss -i ./resources/css/switchbot-frame.css -o ./dist/switchbot-frame.css --watch"
+    },
+    "devDependencies": {
+        "@tailwindcss/cli": "^4.0.0",
+        "tailwindcss": "^4.0.0"
+    }
+}

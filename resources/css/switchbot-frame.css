@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* Scan the package's own Blade views for utility classes. */
+@source "../views";
+
+/*
+ * Safelist the frame-preview aspect ratios. These are chosen at runtime from
+ * config('switchbot.aspect.*') (see SpaanProductions\LaravelSwitchbotFrame\Enums\FrameAspect),
+ * so the scanner never sees the landscape/square variants as literal class names.
+ */
+@source inline("aspect-[3/4]");
+@source inline("aspect-[4/3]");
+@source inline("aspect-square");
+
+@layer base {
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, currentColor);
+	}
+
+	/* Tailwind v4 no longer sets cursor:pointer on buttons by default. */
+	button:not(:disabled),
+	[role="button"]:not(:disabled),
+	summary {
+		cursor: pointer;
+	}
+}

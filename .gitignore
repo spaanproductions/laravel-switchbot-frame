@@ -1,0 +1,11 @@
+/vendor
+/node_modules
+composer.lock
+package-lock.json
+.php-cs-fixer.cache
+.phpunit.result.cache
+.phpunit.cache
+build
+.idea
+.DS_Store
+/.claude/settings.local.json

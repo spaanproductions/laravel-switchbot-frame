@@ -1,0 +1,70 @@
+{
+    "name": "spaanproductions/laravel-switchbot-frame",
+    "description": "Standalone Laravel + Livewire admin page for the SwitchBot AI Art Frame: upload photos, optimize them for the E Ink Spectra 6 panel, and push them to the frame.",
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/spaanproductions/laravel-switchbot-frame",
+    "keywords": ["laravel", "livewire", "switchbot", "ai-art-frame", "e-ink", "eink"],
+    "authors": [
+        {
+            "name": "Spaan Productions",
+            "email": "info@spaanproductions.nl",
+            "homepage": "https://spaanproductions.nl"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/spaanproductions/laravel-switchbot-frame/issues",
+        "source": "https://github.com/spaanproductions/laravel-switchbot-frame"
+    },
+    "require": {
+        "php": "^8.4",
+        "ext-gd": "*",
+        "illuminate/contracts": "^12.0",
+        "illuminate/support": "^12.0",
+        "livewire/livewire": "^4.0",
+        "blade-ui-kit/blade-heroicons": "^2.6",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0",
+        "phpunit/phpunit": "^11.0",
+        "larastan/larastan": "^3.0",
+        "friendsofphp/php-cs-fixer": "^3.75",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.0"
+    },
+    "suggest": {
+        "ext-exif": "Corrects the orientation of phone photos before cropping them for the e-ink panel.",
+        "laravel/sanctum": "Backs the default 'auth:sanctum' route middleware guarding the admin page."
+    },
+    "autoload": {
+        "psr-4": {
+            "SpaanProductions\\LaravelSwitchbotFrame\\": "src/",
+            "SpaanProductions\\LaravelSwitchbotFrame\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SpaanProductions\\LaravelSwitchbotFrame\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "format": "vendor/bin/php-cs-fixer fix",
+        "analyse": "vendor/bin/phpstan analyse"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SpaanProductions\\LaravelSwitchbotFrame\\LaravelSwitchbotFrameServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
