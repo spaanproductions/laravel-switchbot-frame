@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\View as ViewFactory;
+use SpaanProductions\LaravelSwitchbotFrame\Models\AiMessage;
 use SpaanProductions\LaravelSwitchbotFrame\Models\FrameImage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use SpaanProductions\LaravelSwitchbotFrame\Enums\AiImageStatus;
@@ -84,6 +85,10 @@ class AiStudio extends Component
 	public ?string $notice = null;
 
 	public string $noticeType = 'success';
+
+	public ?int $editingConversationId = null;
+
+	public string $editingTitle = '';
 
 	public function mount(): void
 	{
@@ -316,6 +321,39 @@ class AiStudio extends Component
 		$this->flash('Conversation and its generated images deleted.');
 	}
 
+	public function startRename(int $id): void
+	{
+		$conversation = $this->conversations()->whereKey($id)->first();
+
+		if ($conversation === null) {
+			return;
+		}
+
+		$this->editingConversationId = $id;
+		$this->editingTitle = (string) $conversation->title;
+	}
+
+	public function renameConversation(): void
+	{
+		if ($this->editingConversationId === null) {
+			return;
+		}
+
+		$this->validate(['editingTitle' => ['required', 'string', 'max:120']]);
+
+		$this->conversations()
+			->whereKey($this->editingConversationId)
+			->first()
+			?->update(['title' => trim($this->editingTitle)]);
+
+		$this->cancelRename();
+	}
+
+	public function cancelRename(): void
+	{
+		$this->reset('editingConversationId', 'editingTitle');
+	}
+
 	private function startConversation(): AiConversation
 	{
 		$conversation = AiConversation::create([
@@ -342,6 +380,18 @@ class AiStudio extends Component
 	private function conversations(): Builder
 	{
 		return AiConversation::query()->where('user_id', Auth::id());
+	}
+
+	/** Estimated spend across every one of the user's conversations (0 when cost estimation is off). */
+	private function totalCost(): float
+	{
+		if ( ! ImageStudio::costEstimationEnabled()) {
+			return 0.0;
+		}
+
+		return (float) AiMessage::query()
+			->whereIn('ai_conversation_id', $this->conversations()->select('id'))
+			->sum('cost_usd');
 	}
 
 	private function resolveSourcePath(AiConversation $conversation, bool $firstTurn): ?string
@@ -385,7 +435,8 @@ class AiStudio extends Component
 		return ViewFactory::make('switchbot::livewire.ai-studio', [
 			'conversation' => $conversation,
 			'messages' => $conversation?->messages()->with('conversation')->get() ?? collect(),
-			'history' => $this->conversations()->latest('updated_at')->limit(30)->get(),
+			'history' => $this->conversations()->withSum('messages as cost_sum', 'cost_usd')->latest('updated_at')->limit(30)->get(),
+			'totalCost' => $this->totalCost(),
 			'generating' => $conversation?->isProcessing() ?? false,
 			'examplePrompts' => self::EXAMPLE_PROMPTS,
 			'optimizerPresets' => ImageStudio::optimizerPresets(),

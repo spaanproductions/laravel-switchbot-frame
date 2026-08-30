@@ -2,9 +2,20 @@
 
 	{{-- Header --}}
 	<header class="flex flex-col gap-2 pb-8 sm:flex-row sm:items-end sm:justify-between">
-		<div>
-			<p class="text-xs font-medium uppercase tracking-[0.25em] text-[var(--sb-accent)]">AI Studio &middot; Generate &amp; edit</p>
-			<h1 class="mt-2 font-display text-4xl font-semibold tracking-tight text-stone-900">Dream up a frame</h1>
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
+			<div>
+				<p class="text-xs font-medium uppercase tracking-[0.25em] text-[var(--sb-accent)]">AI Studio &middot; Generate &amp; edit</p>
+				<h1 class="mt-2 font-display text-4xl font-semibold tracking-tight text-stone-900">Dream up a frame</h1>
+			</div>
+			@if ($totalCost > 0)
+				<div class="mb-1 inline-flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-5 py-3 shadow-sm">
+					<x-heroicon-o-banknotes class="h-5 w-5 text-[var(--sb-accent)]" />
+					<div class="leading-tight">
+						<p class="text-[10px] font-medium uppercase tracking-wider text-stone-400">Total spend</p>
+						<p class="text-sm font-semibold text-stone-700">~${{ number_format($totalCost, 4) }} <span class="text-xs font-normal text-stone-400">· all conversations</span></p>
+					</div>
+				</div>
+			@endif
 		</div>
 		<a href="{{ route('switchbot.index') }}" class="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition hover:text-[var(--sb-accent)]">
 			<x-heroicon-o-arrow-left class="h-4 w-4" />
@@ -31,16 +42,44 @@
 					@foreach ($history as $item)
 						<li wire:key="conversation-{{ $item->id }}"
 							class="group flex items-center gap-1 rounded-lg px-1 {{ $conversation && $conversation->id === $item->id ? 'bg-[var(--sb-accent)]/10' : 'hover:bg-stone-100' }}">
-							<button type="button" wire:click="loadConversation({{ $item->id }})"
-								class="min-w-0 flex-1 px-2 py-2 text-left">
-								<span class="block truncate text-sm font-medium {{ $conversation && $conversation->id === $item->id ? 'text-[var(--sb-accent)]' : 'text-stone-700' }}">{{ $item->title }}</span>
-								<span class="block text-xs text-stone-400">{{ $item->updated_at?->diffForHumans() }}</span>
-							</button>
-							<button type="button" wire:click="deleteConversation({{ $item->id }})" wire:confirm="Delete this conversation and its generated images?"
-								title="Delete conversation"
-								class="shrink-0 rounded-md p-1.5 text-stone-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100">
-								<x-heroicon-o-trash class="h-4 w-4" />
-							</button>
+							@if ($editingConversationId === $item->id)
+								<div class="min-w-0 flex-1 px-2 py-1.5" x-data x-init="$nextTick(() => $refs.title.focus())">
+									<input x-ref="title" type="text" maxlength="120" wire:model="editingTitle"
+										wire:keydown.enter.prevent="renameConversation"
+										wire:keydown.escape.prevent="cancelRename"
+										class="w-full rounded-md border border-stone-300 bg-white px-2 py-1 text-sm text-stone-800 focus:border-[var(--sb-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--sb-accent)]/40" />
+									@error('editingTitle') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+								</div>
+								<button type="button" wire:click="renameConversation" title="Save title"
+									class="shrink-0 rounded-md p-1.5 text-emerald-600 transition hover:bg-emerald-50">
+									<x-heroicon-o-check class="h-4 w-4" />
+								</button>
+								<button type="button" wire:click="cancelRename" title="Cancel"
+									class="shrink-0 rounded-md p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600">
+									<x-heroicon-o-x-mark class="h-4 w-4" />
+								</button>
+							@else
+								<button type="button" wire:click="loadConversation({{ $item->id }})"
+									class="min-w-0 flex-1 px-2 py-2 text-left">
+									<span class="block truncate text-sm font-medium {{ $conversation && $conversation->id === $item->id ? 'text-[var(--sb-accent)]' : 'text-stone-700' }}">{{ $item->title }}</span>
+									<span class="mt-0.5 flex items-center justify-between gap-2 text-xs text-stone-400">
+										<span class="truncate">{{ $item->updated_at?->diffForHumans() }}</span>
+										@if ($item->cost_sum)
+											<span class="shrink-0 tabular-nums" title="Estimated cost">~${{ number_format((float) $item->cost_sum, 4) }}</span>
+										@endif
+									</span>
+								</button>
+								<button type="button" wire:click="startRename({{ $item->id }})"
+									title="Rename conversation"
+									class="shrink-0 rounded-md p-1.5 text-stone-300 opacity-0 transition hover:bg-stone-100 hover:text-stone-600 group-hover:opacity-100">
+									<x-heroicon-o-pencil-square class="h-4 w-4" />
+								</button>
+								<button type="button" wire:click="deleteConversation({{ $item->id }})" wire:confirm="Delete this conversation and its generated images?"
+									title="Delete conversation"
+									class="shrink-0 rounded-md p-1.5 text-stone-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100">
+									<x-heroicon-o-trash class="h-4 w-4" />
+								</button>
+							@endif
 						</li>
 					@endforeach
 				</ul>

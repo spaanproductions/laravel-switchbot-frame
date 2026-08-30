@@ -158,6 +158,61 @@ class AiStudioTest extends TestCase
 		$this->assertDatabaseMissing('switchbot_ai_messages', ['id' => $message->id]);
 	}
 
+	public function test_a_conversation_can_be_renamed(): void
+	{
+		$conversation = AiConversation::factory()->create(['title' => 'Old title']);
+
+		Livewire::test(AiStudio::class)
+			->call('startRename', $conversation->id)
+			->assertSet('editingConversationId', $conversation->id)
+			->assertSet('editingTitle', 'Old title')
+			->set('editingTitle', '  Sunset over the canal  ')
+			->call('renameConversation')
+			->assertSet('editingConversationId', null)
+			->assertSet('editingTitle', '');
+
+		$this->assertSame('Sunset over the canal', $conversation->fresh()->title);
+	}
+
+	public function test_renaming_a_conversation_requires_a_title(): void
+	{
+		$conversation = AiConversation::factory()->create(['title' => 'Keep me']);
+
+		Livewire::test(AiStudio::class)
+			->call('startRename', $conversation->id)
+			->set('editingTitle', '')
+			->call('renameConversation')
+			->assertHasErrors(['editingTitle' => 'required']);
+
+		$this->assertSame('Keep me', $conversation->fresh()->title);
+	}
+
+	public function test_the_history_and_total_expose_estimated_cost_when_enabled(): void
+	{
+		config(['switchbot.ai.cost_estimation.enabled' => true]);
+
+		$first = AiConversation::factory()->create();
+		AiMessage::factory()->assistant()->create(['ai_conversation_id' => $first->id, 'cost_usd' => 0.002]);
+		AiMessage::factory()->assistant()->create(['ai_conversation_id' => $first->id, 'cost_usd' => 0.003]);
+
+		$second = AiConversation::factory()->create();
+		AiMessage::factory()->assistant()->create(['ai_conversation_id' => $second->id, 'cost_usd' => 0.001]);
+
+		Livewire::test(AiStudio::class)
+			->assertViewHas('totalCost', fn (float $total): bool => abs($total - 0.006) < 1e-9)
+			->assertViewHas('history', fn ($history): bool => abs((float) $history->firstWhere('id', $first->id)->cost_sum - 0.005) < 1e-9);
+	}
+
+	public function test_the_total_cost_is_zero_when_estimation_is_disabled(): void
+	{
+		config(['switchbot.ai.cost_estimation.enabled' => false]);
+
+		$conversation = AiConversation::factory()->create();
+		AiMessage::factory()->assistant()->create(['ai_conversation_id' => $conversation->id, 'cost_usd' => 0.01]);
+
+		Livewire::test(AiStudio::class)->assertViewHas('totalCost', 0.0);
+	}
+
 	public function test_history_only_shows_the_current_users_conversations(): void
 	{
 		$user = new class extends Authenticatable {
