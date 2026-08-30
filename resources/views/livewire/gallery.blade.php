@@ -49,7 +49,11 @@
 				</div>
 				<p class="mt-1 text-sm text-stone-500">JPEG, PNG, WebP &mdash; tuned for the e-ink panel.</p>
 
-				<form wire:submit="save" class="mt-5 space-y-5">
+				<form wire:submit="save" class="mt-5 space-y-5"
+					x-data="{ converting: false, heicError: '' }"
+					x-on:switchbot:heic-converting="converting = true; heicError = ''"
+					x-on:switchbot:heic-done="converting = false"
+					x-on:switchbot:heic-error="converting = false; heicError = $event.detail.message || 'Could not convert this HEIC image — please export it as JPEG.'">
 					<label class="group relative flex {{ $dropzoneAspect->cssClass() }} cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-stone-300 bg-stone-50 transition hover:border-[var(--sb-accent)]/60 hover:bg-[var(--sb-accent)]/[0.03]">
 						@if ($photo && $photo->isPreviewable())
 							<img src="{{ $photo->temporaryUrl() }}" alt="Preview" class="absolute inset-0 h-full w-full object-cover" />
@@ -59,10 +63,12 @@
 							<span class="mt-2 text-sm text-stone-500">Drop a photo or click to browse</span>
 							<span class="mt-1 text-xs text-stone-400">{{ $dropzoneAspect->label() }}, to match the frame</span>
 						@endif
-						<input type="file" wire:model="photo" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 cursor-pointer opacity-0" />
+						<input type="file" wire:model="photo" accept="image/*" class="absolute inset-0 cursor-pointer opacity-0" />
 					</label>
 
+					<div x-show="converting" x-cloak class="text-xs text-[var(--sb-accent)]">Converting HEIC&hellip;</div>
 					<div wire:loading wire:target="photo" class="text-xs text-[var(--sb-accent)]">Uploading&hellip;</div>
+					<p x-show="heicError" x-cloak x-text="heicError" class="text-xs text-red-600"></p>
 					@error('photo') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
 
 					<div>

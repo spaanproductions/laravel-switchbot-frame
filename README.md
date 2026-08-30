@@ -137,18 +137,32 @@ SWITCHBOT_AI_COST_REFRESH_HOURS=24
 > `retry_after` (`config/queue.php`) above the timeout as well, or a slow generation may be retried while it
 > is still running.
 
-## Standalone CSS
+## Standalone CSS & JS
 
-Out of the box the page loads a pre-compiled Tailwind stylesheet from the package route
-`route('switchbot.assets.css')` — no host build step required. Publish it to have the web server serve
-it statically instead (faster, and lets you tweak the compiled file):
+Out of the box the page loads its pre-compiled assets from package routes — a Tailwind stylesheet at
+`route('switchbot.assets.css')` and a small JavaScript helper at `route('switchbot.assets.js', ['asset' => 'app'])`
+— so no host build step is required. Publish them to have the web server serve them statically instead
+(faster, and lets you tweak the compiled files):
 
 ```bash
 php artisan vendor:publish --tag=switchbot-frame-assets
 ```
 
-Once it exists at `public/vendor/switchbot/app.css`, the page links to it directly and the route serves
-it too — so your published (or customized) copy always wins.
+This drops `app.css`, `app.js`, and `heic2any.min.js` into `public/vendor/switchbot/`. Once present,
+the page links to the static files directly and the routes serve them too — so your published (or
+customized) copy always wins.
+
+## iPhone (HEIC) photos
+
+iPhones save photos as HEIC, which the pure-GD optimizer can't decode. So the page converts a picked
+`.heic` to JPEG **in the browser** before upload: a tiny always-loaded interceptor
+(`resources/js/switchbot-frame.js`) lazy-loads the [`heic2any`](https://github.com/alexcorvi/heic2any)
+decoder (libheif compiled to WebAssembly, ~1.3 MB, fetched only on the first HEIC pick) and hands
+Livewire a JPEG. The server only ever receives JPEG/PNG/WebP.
+
+If conversion can't run — JavaScript disabled, or a strict host Content-Security-Policy blocks the
+WebAssembly — the HEIC is simply rejected with a validation message (never a 500). To allow the
+converter under a strict CSP, permit the WASM in your `script-src` (e.g. `'wasm-unsafe-eval'`).
 
 ## Customizing the layout
 

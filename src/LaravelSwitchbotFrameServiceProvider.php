@@ -14,6 +14,7 @@ use SpaanProductions\LaravelSwitchbotFrame\Livewire\WebhookManager;
 use SpaanProductions\LaravelSwitchbotFrame\Actions\OptimizeImageForEink;
 use SpaanProductions\LaravelSwitchbotFrame\Console\Commands\ManageWebhook;
 use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\ImageController;
+use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\ScriptController;
 use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\AiImageController;
 use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\WebhookController;
 use SpaanProductions\LaravelSwitchbotFrame\Http\Controllers\StylesheetController;
@@ -67,6 +68,7 @@ class LaravelSwitchbotFrameServiceProvider extends PackageServiceProvider
 				Route::livewire('/', Gallery::class)->name('switchbot.index');
 				Route::get('/images/{frameImage}', ImageController::class)->name('switchbot.images.show');
 				Route::get('/assets/app.css', StylesheetController::class)->name('switchbot.assets.css');
+				Route::get('/assets/js/{asset}', ScriptController::class)->whereIn('asset', ['app', 'heic2any'])->name('switchbot.assets.js');
 
 				if (ImageStudio::enabled()) {
 					Route::livewire('/studio', AiStudio::class)->name('switchbot.studio');
@@ -97,6 +99,8 @@ class LaravelSwitchbotFrameServiceProvider extends PackageServiceProvider
 
 		$this->publishes([
 			__DIR__ . '/../dist/switchbot-frame.css' => public_path('vendor/switchbot/app.css'),
+			__DIR__ . '/../dist/switchbot-frame.js' => public_path('vendor/switchbot/app.js'),
+			__DIR__ . '/../dist/heic2any.min.js' => public_path('vendor/switchbot/heic2any.min.js'),
 		], 'switchbot-frame-assets');
 
 		// hasViews() already registers a publish under "switchbot-views"; add an

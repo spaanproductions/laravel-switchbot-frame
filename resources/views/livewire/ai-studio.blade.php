@@ -134,7 +134,11 @@
 			@endif
 
 			{{-- Composer --}}
-			<form wire:submit="send" class="mt-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+			<form wire:submit="send" class="mt-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
+					x-data="{ converting: false, heicError: '' }"
+					x-on:switchbot:heic-converting="converting = true; heicError = ''"
+					x-on:switchbot:heic-done="converting = false"
+					x-on:switchbot:heic-error="converting = false; heicError = $event.detail.message || 'Could not convert this HEIC image — please export it as JPEG.'">
 
 				@if ($conversation === null)
 					<div class="mb-4 flex flex-wrap items-center gap-2">
@@ -161,7 +165,7 @@
 						@else
 							<x-heroicon-o-photo class="h-5 w-5 text-stone-300 transition group-hover:text-[var(--sb-accent)]" />
 						@endif
-						<input type="file" wire:model="startImage" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 cursor-pointer opacity-0" />
+						<input type="file" wire:model="startImage" accept="image/*" class="absolute inset-0 cursor-pointer opacity-0" />
 					</label>
 
 					<div class="min-w-0 flex-1">
@@ -173,8 +177,9 @@
 							class="min-h-[78px] max-h-[240px] w-full resize-none overflow-y-auto rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:border-[var(--sb-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--sb-accent)]/40"></textarea>
 						<div class="mt-1 flex items-center justify-between">
 							<span class="text-xs text-stone-400">
+								<span x-show="converting" x-cloak class="text-[var(--sb-accent)]">Converting HEIC&hellip;</span>
 								<span wire:loading wire:target="startImage" class="text-[var(--sb-accent)]">Uploading image&hellip;</span>
-								<span wire:loading.remove wire:target="startImage">{{ $conversation ? 'Editing your latest image' : ($fromImage ? 'Editing an image from your library' : 'A photo above is optional') }}</span>
+								<span wire:loading.remove wire:target="startImage" x-show="! converting">{{ $conversation ? 'Editing your latest image' : ($fromImage ? 'Editing an image from your library' : 'A photo above is optional') }}</span>
 							</span>
 							<div class="flex items-center gap-2">
 								<button type="button" wire:click="improvePrompt" wire:loading.attr="disabled" wire:target="improvePrompt" title="Improve the prompt with AI"
@@ -192,6 +197,7 @@
 							</div>
 						</div>
 						@error('prompt') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+						<p x-show="heicError" x-cloak x-text="heicError" class="mt-1 text-xs text-red-600"></p>
 						@error('startImage') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
 					</div>
 				</div>
