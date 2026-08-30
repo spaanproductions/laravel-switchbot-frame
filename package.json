@@ -7,8 +7,8 @@
         "dev": "node ./bin/build-js.mjs && tailwindcss -i ./resources/css/switchbot-frame.css -o ./dist/switchbot-frame.css --watch"
     },
     "devDependencies": {
-        "@tailwindcss/cli": "^4.0.0",
+        "@tailwindcss/cli": "4.3.3",
         "heic2any": "^0.0.4",
-        "tailwindcss": "^4.0.0"
+        "tailwindcss": "4.3.3"
     }
 }
