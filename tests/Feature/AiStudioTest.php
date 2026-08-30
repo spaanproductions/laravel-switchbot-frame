@@ -64,6 +64,16 @@ class AiStudioTest extends TestCase
 		Queue::assertPushed(GenerateAiImageJob::class, fn (GenerateAiImageJob $job): bool => $job->sourcePath === $userMessage->image_path);
 	}
 
+	public function test_a_non_previewable_start_image_does_not_crash_and_is_rejected(): void
+	{
+		// A HEIC (iPhone default) is not in Livewire's preview_mimes; before the guard, rendering the
+		// composer thumbnail called temporaryUrl() on it and threw a 500. ->set() triggers that render.
+		Livewire::test(AiStudio::class)
+			->set('startImage', UploadedFile::fake()->create('photo.heic', 100, 'image/heic'))
+			->call('send')
+			->assertHasErrors(['startImage']);
+	}
+
 	public function test_a_follow_up_prompt_edits_the_latest_generated_image(): void
 	{
 		Queue::fake();

@@ -59,7 +59,7 @@
 							<span class="mt-2 text-sm text-stone-500">Drop a photo or click to browse</span>
 							<span class="mt-1 text-xs text-stone-400">{{ $dropzoneAspect->label() }}, to match the frame</span>
 						@endif
-						<input type="file" wire:model="photo" accept="image/*" class="absolute inset-0 cursor-pointer opacity-0" />
+						<input type="file" wire:model="photo" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 cursor-pointer opacity-0" />
 					</label>
 
 					<div wire:loading wire:target="photo" class="text-xs text-[var(--sb-accent)]">Uploading&hellip;</div>

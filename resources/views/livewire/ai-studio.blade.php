@@ -151,14 +151,17 @@
 				<div class="flex items-start gap-3">
 					<label class="group relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-stone-300 bg-stone-50 transition hover:border-[var(--sb-accent)]/60"
 						title="Optional starting image">
-						@if ($startImage)
+						@if ($startImage && $startImage->isPreviewable())
 							<img src="{{ $startImage->temporaryUrl() }}" alt="Base" class="absolute inset-0 h-full w-full object-cover" />
+						@elseif ($startImage)
+							{{-- Selected file can't be previewed inline (e.g. HEIC); the mimes rule surfaces the error below. --}}
+							<x-heroicon-o-photo class="h-5 w-5 text-stone-300 transition group-hover:text-[var(--sb-accent)]" />
 						@elseif ($fromImage)
 							<img src="{{ $fromImage->url }}" alt="Base" class="absolute inset-0 h-full w-full object-cover" />
 						@else
 							<x-heroicon-o-photo class="h-5 w-5 text-stone-300 transition group-hover:text-[var(--sb-accent)]" />
 						@endif
-						<input type="file" wire:model="startImage" accept="image/*" class="absolute inset-0 cursor-pointer opacity-0" />
+						<input type="file" wire:model="startImage" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 cursor-pointer opacity-0" />
 					</label>
 
 					<div class="min-w-0 flex-1">
