@@ -76,7 +76,9 @@ Namespace root: `SpaanProductions\LaravelSwitchbotFrame\` → `src/`. Factories:
 - The three `aspect-[3/4] | aspect-[4/3] | aspect-square` classes are chosen at runtime from config, so
   they are safelisted via `@source inline(...)` in `resources/css/switchbot-frame.css`.
 - In `render()`, return views via `ViewFactory::make('switchbot::...')` (the `Illuminate\Support\Facades\View`
-  facade), not the `view()` helper — larastan can't resolve namespaced package views through the helper.
+  facade). Larastan (3.13+) type-checks the name as a `view-string` via `view()->exists()` in its Testbench
+  app, which doesn't load our provider — so `phpstan-bootstrap.php` registers the `switchbot` view namespace.
+  A new view must exist under `resources/views/` or PHPStan fails.
 - Migrations are **not** auto-loaded — the provider registers them via `publishesMigrations`, so hosts
   publish them (`vendor:publish --tag=switchbot-frame-migrations`, which stamps a fresh timestamp) per
   Laravel's recommendation. Tests load them via `defineDatabaseMigrations()` in the test `TestCase`.
