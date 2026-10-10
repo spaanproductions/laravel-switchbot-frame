@@ -4,11 +4,13 @@ namespace SpaanProductions\LaravelSwitchbotFrame\Tests\Feature;
 
 use Laravel\Ai\Image;
 use RuntimeException;
+use Illuminate\Support\Facades\Bus;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\Usage;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Ai\Responses\ImageResponse;
+use Laravel\Ai\Responses\Data\ImageUsage;
 use Laravel\Ai\Responses\Data\GeneratedImage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use SpaanProductions\LaravelSwitchbotFrame\Tests\TestCase;
@@ -66,7 +68,7 @@ class GenerateAiImageJobTest extends TestCase
 	{
 		$response = new ImageResponse(
 			collect([new GeneratedImage(base64_encode($this->pngBytes(8, 6)), 'image/png')]),
-			new Usage(promptTokens: 1290, completionTokens: 42),
+			$this->usage(1290, 42),
 			new Meta('gemini', 'gemini-2.5-flash-image'),
 		);
 
@@ -91,7 +93,7 @@ class GenerateAiImageJobTest extends TestCase
 
 		Image::fake([new ImageResponse(
 			collect([new GeneratedImage(base64_encode($this->pngBytes(8, 6)), 'image/png')]),
-			new Usage(promptTokens: 10, completionTokens: 5),
+			$this->usage(10, 5),
 			new Meta('gemini', 'gemini-2.5-flash-image'),
 		)]);
 
@@ -120,6 +122,25 @@ class GenerateAiImageJobTest extends TestCase
 		Queue::assertNotPushed(CalculateAiCostJob::class);
 	}
 
+	public function test_a_failing_cost_dispatch_still_marks_the_image_ready(): void
+	{
+		config(['switchbot.ai.cost_estimation.enabled' => true]);
+		Bus::shouldReceive('dispatch')->once()->andThrow(new RuntimeException('queue is down'));
+
+		Image::fake([base64_encode($this->pngBytes(8, 6))]);
+
+		$conversation = AiConversation::factory()->create();
+		$message = AiMessage::factory()->processing()->create(['ai_conversation_id' => $conversation->id]);
+
+		(new GenerateAiImageJob($message, 'a cabin'))->handle();
+
+		$message->refresh();
+
+		$this->assertSame(AiImageStatus::Ready, $message->status);
+		$this->assertNull($message->error);
+		Storage::disk('s3')->assertExists($message->image_path);
+	}
+
 	public function test_it_marks_the_message_failed_when_generation_throws(): void
 	{
 		Image::fake(fn () => throw new RuntimeException('provider exploded'));
@@ -134,6 +155,12 @@ class GenerateAiImageJobTest extends TestCase
 		$this->assertSame(AiImageStatus::Failed, $message->status);
 		$this->assertNotNull($message->error);
 		$this->assertNull($message->image_path);
+	}
+
+	/** laravel/ai 1.x image responses carry an ImageUsage; 0.x a plain Usage (same positional order). */
+	private function usage(int $input, int $output): Usage
+	{
+		return class_exists(ImageUsage::class) ? new ImageUsage($input, $output) : new Usage($input, $output);
 	}
 
 	private function pngBytes(int $width, int $height): string

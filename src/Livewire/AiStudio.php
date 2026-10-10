@@ -10,10 +10,12 @@ use Livewire\WithFileUploads;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\View as ViewFactory;
+use SpaanProductions\LaravelSwitchbotFrame\Support\AiUsage;
 use SpaanProductions\LaravelSwitchbotFrame\Models\AiMessage;
 use SpaanProductions\LaravelSwitchbotFrame\Models\FrameImage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -177,18 +179,20 @@ class AiStudio extends Component
 			return;
 		}
 
-		$log = AiPromptImprovement::create([
-			'user_id' => Auth::id(),
-			'input_prompt' => $original,
-			'output_prompt' => $improved,
-			'model' => $response->meta->model,
-			'input_tokens' => $response->usage->promptTokens ?: null,
-			'output_tokens' => $response->usage->completionTokens ?: null,
-		]);
+		// Logging/cost tracking is bookkeeping only; it must never block the improved prompt.
+		rescue(function () use ($response, $original, $improved): void {
+			$log = AiPromptImprovement::create([
+				'user_id' => Auth::id(),
+				'input_prompt' => $original,
+				'output_prompt' => $improved,
+				'model' => $response->meta->model,
+				...AiUsage::columns($response->usage),
+			]);
 
-		if (ImageStudio::costEstimationEnabled()) {
-			CalculateAiCostJob::dispatch($log);
-		}
+			if (ImageStudio::costEstimationEnabled()) {
+				Bus::dispatch(new CalculateAiCostJob($log));
+			}
+		}, report: false);
 
 		$this->prompt = Str::limit($improved, 1000, '');
 		$this->dispatch('prompt-changed');

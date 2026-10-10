@@ -31,7 +31,7 @@
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.75",
         "larastan/larastan": "^3.0",
-        "laravel/ai": "^0.11.0",
+        "laravel/ai": "^0.11.0|^1.0",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.0|^9.0",
         "orchestra/testbench": "^10.0|^11.0",
@@ -40,7 +40,8 @@
     "suggest": {
         "ext-exif": "Corrects the orientation of phone photos before cropping them for the e-ink panel.",
         "laravel/sanctum": "Backs the default 'auth:sanctum' route middleware guarding the admin page.",
-        "laravel/ai": "Enables the AI Image Studio for generating & iteratively editing frame images from prompts."
+        "laravel/ai": "Enables the AI Image Studio for generating & iteratively editing frame images from prompts (^0.11 or ^1.0).",
+        "spaanproductions/laravel-ai-usage": "Tracks the tokens and cost of every laravel/ai call (including the AI Studio's) in a filterable dashboard with budgets."
     },
     "autoload": {
         "psr-4": {

@@ -6,6 +6,7 @@ use Laravel\Ai\Ai;
 use Livewire\Livewire;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -337,6 +338,20 @@ class AiStudioTest extends TestCase
 		]);
 
 		Queue::assertPushed(CalculateAiCostJob::class);
+	}
+
+	public function test_a_failing_usage_log_still_applies_the_improved_prompt(): void
+	{
+		Schema::drop('switchbot_ai_prompt_improvements');
+
+		$suggestion = 'A luminous misty canal at dawn, soft impressionist oil painting.';
+		Ai::fakeAgent(PromptImprover::class, [$suggestion]);
+
+		Livewire::test(AiStudio::class)
+			->set('prompt', 'canal')
+			->call('improvePrompt')
+			->assertSet('prompt', $suggestion)
+			->assertDispatched('prompt-changed');
 	}
 
 	public function test_using_an_example_fills_a_detailed_prompt(): void

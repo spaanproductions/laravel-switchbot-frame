@@ -83,7 +83,7 @@ it's optimized for the panel like any other image. Past conversations are browsa
 also deletes its generated preview images.
 
 The Studio is **opt-in**: it only appears when `laravel/ai` is installed *and* enabled in config, so you
-can leave it off even when the package is present.
+can leave it off even when the package is present. Both `laravel/ai` **0.11** and **1.x** are supported.
 
 ```bash
 composer require laravel/ai
@@ -127,6 +127,9 @@ SWITCHBOT_AI_COST_REFRESH_HOURS=24
 > [LiteLLM's price sheet](https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json)
 > (fetched and cached, refreshed every `SWITCHBOT_AI_COST_REFRESH_HOURS`). Figures are a rough **indication
 > only** and must not be used for invoicing, budgeting or any correctness-sensitive purpose.
+> Token usage and cost are bookkeeping only: if recording them fails, the image is still marked ready.
+> For proper usage tracking across all your `laravel/ai` calls, with a dashboard and budgets, see
+> [`spaanproductions/laravel-ai-usage`](https://github.com/spaanproductions/laravel-ai-usage).
 
 > [!IMPORTANT]
 > Image generation and the e-ink optimization run on the **queue** and can take a while. `GenerateAiImageJob`

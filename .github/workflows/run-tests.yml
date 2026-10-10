@@ -24,13 +24,14 @@ jobs:
       matrix:
         php: ['8.4', '8.5']
         testbench: ['10.*', '11.*']
+        laravel-ai: ['0.11.*', '1.*']
         include:
           - testbench: '10.*'
             laravel: '12'
           - testbench: '11.*'
             laravel: '13'
 
-    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }} / laravel/ai ${{ matrix.laravel-ai }}
 
     steps:
       - name: Checkout code
@@ -45,6 +46,9 @@ jobs:
 
       - name: Constrain Testbench version
         run: composer require "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+
+      - name: Constrain laravel/ai version
+        run: composer require "laravel/ai:${{ matrix.laravel-ai }}" --dev --no-interaction --no-update
 
       - name: Install dependencies
         uses: ramsey/composer-install@v4

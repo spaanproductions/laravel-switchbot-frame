@@ -6,6 +6,7 @@ use Throwable;
 use Laravel\Ai\Image;
 use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Ai\Responses\ImageResponse;
@@ -13,6 +14,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Laravel\Ai\Files\Image as ImageFile;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use SpaanProductions\LaravelSwitchbotFrame\Support\AiUsage;
 use SpaanProductions\LaravelSwitchbotFrame\Models\AiMessage;
 use SpaanProductions\LaravelSwitchbotFrame\Enums\AiImageStatus;
 use SpaanProductions\LaravelSwitchbotFrame\Support\ImageStudio;
@@ -63,22 +65,37 @@ class GenerateAiImageJob implements ShouldQueue
 				'width' => is_array($dimensions) ? $dimensions[0] : null,
 				'height' => is_array($dimensions) ? $dimensions[1] : null,
 				'file_size' => $disk->size($path),
-				'input_tokens' => $response->usage->promptTokens ?: null,
-				'output_tokens' => $response->usage->completionTokens ?: null,
-				'model' => $response->meta->model,
+				...$this->bookkeeping($response),
 				'status' => AiImageStatus::Ready,
 				'error' => null,
 			]);
-
-			if (ImageStudio::costEstimationEnabled()) {
-				CalculateAiCostJob::dispatch($this->message);
-			}
 		} catch (Throwable $e) {
 			$this->message->update([
 				'status' => AiImageStatus::Failed,
 				'error' => $e->getMessage(),
 			]);
+
+			return;
 		}
+
+		if (ImageStudio::costEstimationEnabled()) {
+			// Cost is an indication only; failing to queue it must never fail the image.
+			rescue(fn () => Bus::dispatch(new CalculateAiCostJob($this->message)), report: false);
+		}
+	}
+
+	/**
+	 * Token usage and model are bookkeeping only: if reading them fails (e.g. a
+	 * laravel/ai shape change), the image is still marked ready without them.
+	 *
+	 * @return array{input_tokens: int|null, output_tokens: int|null, model: string|null}
+	 */
+	private function bookkeeping(ImageResponse $response): array
+	{
+		return [
+			...rescue(fn () => AiUsage::columns($response->usage), ['input_tokens' => null, 'output_tokens' => null], false),
+			'model' => rescue(fn () => $response->meta->model, null, false),
+		];
 	}
 
 	private function generate(): ImageResponse
